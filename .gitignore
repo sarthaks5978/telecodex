@@ -1,0 +1,10 @@
+/target
+*.sqlite3
+*.sqlite3-*
+/tmp
+telecodex.toml
+tmp-config.toml
+.env
+.env.*
+.telecodex/
+.build-number

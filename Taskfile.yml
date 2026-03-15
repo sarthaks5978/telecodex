@@ -1,0 +1,68 @@
+version: "3"
+
+vars:
+  CONFIG: '{{default "telecodex.toml" .CONFIG}}'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  init-config:
+    desc: Create telecodex.toml from the example if it does not exist
+    cmds:
+      - >-
+        {{if eq OS "windows"}}cmd /C "if exist \"{{.CONFIG}}\" (echo Config already exists) else (copy /Y \"telecodex.toml.example\" \"{{.CONFIG}}\" >NUL && echo Created {{.CONFIG}})"{{else}}sh -c 'if [ -f "{{.CONFIG}}" ]; then echo "Config already exists"; else cp "telecodex.toml.example" "{{.CONFIG}}" && echo "Created {{.CONFIG}}"; fi'{{end}}
+
+  build:
+    desc: Build debug binary
+    cmds:
+      - cargo build
+
+  build-release:
+    desc: Build release binary
+    cmds:
+      - cargo build --release
+
+  run:
+    desc: Run Telecodex with a config file
+    cmds:
+      - cargo run -- {{.CONFIG}}
+
+  run-release:
+    desc: Run Telecodex in release mode with a config file
+    cmds:
+      - cargo run --release -- {{.CONFIG}}
+
+  test:
+    desc: Run unit tests
+    cmds:
+      - cargo test
+
+  fmt:
+    desc: Format the codebase
+    cmds:
+      - cargo fmt
+
+  fmt-check:
+    desc: Check formatting without rewriting files
+    cmds:
+      - cargo fmt --check
+
+  check:
+    desc: Run cargo check
+    cmds:
+      - cargo check
+
+  clippy:
+    desc: Run clippy with warnings denied
+    cmds:
+      - cargo clippy --all-targets --all-features -- -D warnings
+
+  verify:
+    desc: Run the full local validation suite
+    deps:
+      - fmt-check
+      - test
+      - clippy
