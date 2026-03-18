@@ -156,7 +156,29 @@ pub(super) async fn process_turn(
                 } else {
                     "failed"
                 };
-                finish_failed_turn(&shared.store, turn_id, &sink, status, &error).await?;
+                let recovery_note = if should_reset_session_after_error(&error) {
+                    tracing::warn!(
+                        "resetting stale Codex thread binding for {:?} after error: {error:#}",
+                        session.key
+                    );
+                    match shared.store.clear_session_conversation(session.key) {
+                        Ok(()) => Some(
+                            "The saved Codex thread binding for this topic was reset. Retry the same request to start a fresh session."
+                                .to_string(),
+                        ),
+                        Err(clear_error) => {
+                            tracing::warn!(
+                                "failed to clear stale session conversation for {:?}: {clear_error:#}",
+                                session.key
+                            );
+                            None
+                        }
+                    }
+                } else {
+                    None
+                };
+                finish_failed_turn(&shared.store, turn_id, &sink, status, &error, recovery_note)
+                    .await?;
                 Err(error)
             }
         }
@@ -270,13 +292,28 @@ async fn finish_failed_turn(
     sink: &Arc<Mutex<LiveTurnSink>>,
     status: &str,
     error: &anyhow::Error,
+    recovery_note: Option<String>,
 ) -> Result<()> {
     store.record_turn_finished(turn_id, status, None)?;
-    sink.lock()
-        .await
-        .finish(Some(format!("Turn {status}: {error:#}")))
-        .await?;
+    let mut message = format!("Turn {status}: {error:#}");
+    if let Some(note) = recovery_note {
+        message.push_str("\n\n");
+        message.push_str(&note);
+    }
+    sink.lock().await.finish(Some(message)).await?;
     Ok(())
+}
+
+pub(super) fn should_reset_session_after_error(error: &anyhow::Error) -> bool {
+    let pretty = format!("{error:#}").to_ascii_lowercase();
+    let display = error.to_string().to_ascii_lowercase();
+    let matches = |text: &str| {
+        text.contains("no rollout found for thread id")
+            || (text.contains("rollout")
+                && text.contains("thread id")
+                && text.contains("code -32600"))
+    };
+    matches(&pretty) || matches(&display)
 }
 
 struct LiveTurnSink {

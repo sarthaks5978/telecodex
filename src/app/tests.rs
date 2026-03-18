@@ -48,6 +48,28 @@ fn sample_turn_request(session_key: SessionKey) -> TurnRequest {
 }
 
 #[test]
+fn detects_stale_codex_thread_errors() {
+    let error = anyhow::anyhow!("no rollout found for thread id 019abc | code -32600");
+
+    assert!(should_reset_session_after_error(&error));
+}
+
+#[test]
+fn detects_stale_codex_thread_errors_in_error_context() {
+    let error = anyhow::anyhow!("codex turn failed")
+        .context("no rollout found for thread id 019abc | code -32600");
+
+    assert!(should_reset_session_after_error(&error));
+}
+
+#[test]
+fn ignores_unrelated_invalid_request_errors() {
+    let error = anyhow::anyhow!("json-rpc request rejected with code -32600");
+
+    assert!(!should_reset_session_after_error(&error));
+}
+
+#[test]
 fn validates_absolute_directories() {
     let cwd = std::env::current_dir().unwrap();
     assert!(validate_directory(cwd.to_str().unwrap()).is_ok());
