@@ -75,6 +75,8 @@ pub struct CodexConfig {
     pub default_search_mode: SearchMode,
     #[serde(default)]
     pub default_add_dirs: Vec<PathBuf>,
+    #[serde(default)]
+    pub seed_workspaces: Vec<PathBuf>,
     #[serde(default = "default_true")]
     pub import_desktop_history: bool,
     #[serde(default = "default_true")]
@@ -145,6 +147,22 @@ impl Config {
                 bail!(
                     "codex.default_add_dirs entry is not a directory: {}",
                     dir.display()
+                );
+            }
+        }
+
+        for workspace in &mut self.codex.seed_workspaces {
+            if !workspace.is_absolute() {
+                bail!("codex.seed_workspaces entries must be absolute paths");
+            }
+            *workspace = normalize_path(
+                fs::canonicalize(&*workspace)
+                    .with_context(|| format!("failed to canonicalize {}", workspace.display()))?,
+            );
+            if !workspace.is_dir() {
+                bail!(
+                    "codex.seed_workspaces entry is not a directory: {}",
+                    workspace.display()
                 );
             }
         }

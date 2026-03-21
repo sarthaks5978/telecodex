@@ -14,7 +14,7 @@ impl App {
         &self,
         chat: &crate::telegram::Chat,
         current_thread_id: Option<i64>,
-        environment_thread_id: &str,
+        environment_selector: &str,
     ) -> Result<()> {
         if forum_sync_cooldown_active(&self.shared.store, chat.id)? {
             return Ok(());
@@ -24,15 +24,16 @@ impl App {
             200,
             self.shared.config.codex.import_desktop_history,
             self.shared.config.codex.import_cli_history,
+            &self.shared.config.codex.seed_workspaces,
         )?;
         let Some(environment) = environments
             .into_iter()
-            .find(|entry| entry.latest_thread_id == environment_thread_id)
+            .find(|entry| environment_selector_key(entry) == environment_selector)
         else {
             self.send_status(
                 chat.id,
                 current_thread_id,
-                "Environment no longer exists in local Codex history.",
+                "Environment is no longer available for import.",
             )
             .await?;
             return Ok(());
@@ -70,9 +71,11 @@ impl App {
         self.shared
             .store
             .set_session_title(session_key, Some(&environment.name))?;
-        self.shared
-            .store
-            .set_session_codex_thread(session_key, &environment.latest_thread_id)?;
+        if let Some(thread_id) = environment.latest_thread_id.as_deref() {
+            self.shared
+                .store
+                .set_session_codex_thread(session_key, thread_id)?;
+        }
         Ok(())
     }
 
@@ -91,9 +94,11 @@ impl App {
         self.shared
             .store
             .set_session_title(session.key, Some(&environment.name))?;
-        self.shared
-            .store
-            .set_session_codex_thread(session.key, &environment.latest_thread_id)?;
+        if let Some(thread_id) = environment.latest_thread_id.as_deref() {
+            self.shared
+                .store
+                .set_session_codex_thread(session.key, thread_id)?;
+        }
         if session.session_title.as_deref().map(str::trim) == Some(environment.name.as_str()) {
             return Ok(true);
         }
@@ -185,6 +190,7 @@ impl App {
             200,
             self.shared.config.codex.import_desktop_history,
             self.shared.config.codex.import_cli_history,
+            &self.shared.config.codex.seed_workspaces,
         )?;
         if environments.is_empty() {
             return Ok(());
@@ -264,9 +270,11 @@ impl App {
             self.shared
                 .store
                 .set_session_title(session_key, Some(&environment.name))?;
-            self.shared
-                .store
-                .set_session_codex_thread(session_key, &environment.latest_thread_id)?;
+            if let Some(thread_id) = environment.latest_thread_id.as_deref() {
+                self.shared
+                    .store
+                    .set_session_codex_thread(session_key, thread_id)?;
+            }
             self.shared.store.audit(
                 None,
                 "forum_topic_synced",

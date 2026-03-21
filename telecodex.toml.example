@@ -25,6 +25,7 @@ default_approval = "never"
 default_search_mode = "disabled"
 import_desktop_history = true
 import_cli_history = true
+seed_workspaces = ["/absolute/path/to/workspace-a"]
 default_add_dirs = [
   "/absolute/path/to/workspace"
 ]

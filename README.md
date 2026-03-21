@@ -231,6 +231,7 @@ default_approval = "never"
 default_search_mode = "disabled"
 import_desktop_history = true
 import_cli_history = true
+seed_workspaces = ["/absolute/path/to/workspace-a"]
 default_add_dirs = ["/absolute/path/to/workspace"]
 ```
 
@@ -265,6 +266,7 @@ Telecodex will start `codex login --device-auth`, send a clickable `auth.openai.
 
 - `codex.binary` can be a binary name or absolute path.
 - `codex.default_cwd` must be an existing absolute directory.
+- `codex.seed_workspaces` adds explicit workspace directories to `/environments` and forum sync, even before they have local Codex history.
 - `codex.default_add_dirs` entries must also be absolute existing directories.
 - `codex.import_desktop_history` and `codex.import_cli_history` control session import sources.
 - `codex.default_search_mode` supports `disabled`, `live`, and `cached`.

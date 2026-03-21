@@ -560,7 +560,7 @@ pub(super) fn environment_dashboard_keyboard(
                 },
                 None => InlineKeyboardButton {
                     text: button_text,
-                    callback_data: Some(format!("env:{}", environment.latest_thread_id)),
+                    callback_data: Some(format!("env:{}", environment_selector_key(environment))),
                     url: None,
                 },
             };

@@ -174,18 +174,64 @@ fn session_environment_match_requires_same_title_and_cwd() {
     let same = CodexEnvironmentSummary {
         cwd: environment_identity_for_cwd(&session.cwd),
         name: "Ops Alerts".to_string(),
-        latest_thread_id: "thr-1".to_string(),
+        latest_thread_id: Some("thr-1".to_string()),
         updated_at: "2026-03-14T10:05:00Z".to_string(),
     };
     let different_title = CodexEnvironmentSummary {
         cwd: environment_identity_for_cwd(&session.cwd),
         name: "ops alerts".to_string(),
-        latest_thread_id: "thr-2".to_string(),
+        latest_thread_id: Some("thr-2".to_string()),
         updated_at: "2026-03-14T10:06:00Z".to_string(),
     };
 
     assert!(session_matches_environment(&session, &same));
     assert!(!session_matches_environment(&session, &different_title));
+}
+
+#[test]
+fn builds_import_button_for_seed_environment() {
+    let session = crate::models::SessionRecord {
+        id: 1,
+        key: SessionKey::new(-1001234567890, Some(323)),
+        session_title: Some("Current topic".to_string()),
+        codex_thread_id: Some("019ce152-99e8-7c30-b5b7-166e6aebd550".to_string()),
+        force_fresh_thread: false,
+        updated_at: "2026-03-13T10:00:00Z".to_string(),
+        cwd: sample_workspace(),
+        model: None,
+        reasoning_effort: None,
+        session_prompt: None,
+        sandbox_mode: "workspace-write".to_string(),
+        approval_policy: "never".to_string(),
+        search_mode: SearchMode::Disabled,
+        add_dirs: vec![],
+        busy: false,
+    };
+    let chat = crate::telegram::Chat {
+        id: -1001234567890,
+        kind: "supergroup".to_string(),
+        is_forum: Some(true),
+        username: Some("varv_alarms_bot_chat".to_string()),
+        title: Some("Codex chat".to_string()),
+    };
+    let environment = CodexEnvironmentSummary {
+        cwd: sample_workspace().join("seeded"),
+        name: "Seeded".to_string(),
+        latest_thread_id: None,
+        updated_at: String::new(),
+    };
+
+    let keyboard = environment_dashboard_keyboard(&chat, &session, &[environment], &[]).unwrap();
+    let button = &keyboard.inline_keyboard[0][0];
+
+    assert_eq!(button.url, None);
+    assert!(
+        button
+            .callback_data
+            .as_deref()
+            .unwrap()
+            .starts_with("env:cwd:")
+    );
 }
 
 #[test]

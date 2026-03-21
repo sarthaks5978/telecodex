@@ -32,9 +32,9 @@ use crate::{
     },
     codex_history::{
         CodexEnvironmentSummary, CodexHistoryEntry, CodexThreadSummary,
-        environment_identity_for_cwd, find_thread_by_id, find_thread_by_prefix,
-        latest_thread_for_cwd, list_environments_for_sources, list_threads_for_cwd,
-        read_thread_history,
+        environment_identity_for_cwd, environment_selector_key, find_thread_by_id,
+        find_thread_by_prefix, latest_thread_for_cwd, list_environments_for_sources,
+        list_threads_for_cwd, read_thread_history,
     },
     commands::{
         BridgeCommand, CommandHelp, ParsedInput, command_help, default_bot_commands, parse_command,
@@ -618,6 +618,7 @@ impl App {
                             200,
                             self.shared.config.codex.import_desktop_history,
                             self.shared.config.codex.import_cli_history,
+                            &self.shared.config.codex.seed_workspaces,
                         )?;
                         let sessions = self
                             .prune_missing_forum_sessions(
